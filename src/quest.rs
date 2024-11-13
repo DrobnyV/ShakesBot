@@ -70,8 +70,12 @@ impl<'a> Questing<'a> {
 
                             break;
                         }
-
-                        let best_quest = q.first().unwrap();
+                        let mut best_quest = gs.tavern.quests.first().unwrap();
+                        for quest in gs.tavern.quests.clone() {
+                            if quest.base_experience > best_quest.base_experience{
+                                best_quest = &quest;
+                            }
+                        }
 
                         if best_quest.base_length > gs.tavern.thirst_for_adventure_sec {
                             let has_extra_beer = gs
