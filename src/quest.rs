@@ -52,7 +52,7 @@ impl<'a> Questing<'a> {
             sleep(Duration::from_secs(2)).await;
             let gs = self.session.game_state().unwrap();
             let current_time = Local::now();
-            let end_hour = 22;
+            let end_hour = 23;
             let remaining_hours = end_hour  - current_time.hour() as i32;
             let mut rem_help = remaining_hours;
             if remaining_hours > 11 || remaining_hours < 2{
