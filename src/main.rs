@@ -1,5 +1,6 @@
 mod quest;
-
+#[cfg(test)]
+mod testing;
 use std::time::Duration;
 use sf_api::{SimpleSession};
 use tokio;
