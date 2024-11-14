@@ -15,7 +15,7 @@ use sf_api::gamestate::GameState;
 use tokio::time::sleep;
 use std::fs::OpenOptions;
 use std::io::Write;
-
+use sf_api::gamestate::items::PlayerItemPlace;
 
 pub struct Questing<'a> {
     session: &'a mut SimpleSession,
@@ -102,8 +102,19 @@ impl<'a> Questing<'a> {
                         log_to_file("Starting the next quest").await;
 
                         if best_quest.item.is_some() && gs.character.inventory.free_slot().is_none() {
-                            log_to_file("Inventory is full. Stopping!").await;
-                            break;
+                            let backpack = gs.character.inventory.bag.clone();
+                            let mut bad_item_index = 0;
+                            let mut bad_valu = 999999999;
+                            for (back_slot_index, back_item_option) in backpack.iter().enumerate() {
+                                if !back_item_option.is_none(){
+                                    if bad_valu > back_item_option.clone().unwrap().price{
+                                        bad_item_index = back_slot_index;
+                                        bad_valu = back_item_option.clone().unwrap().price;
+                                    }
+                                }
+                            }
+                            self.session.send_command(Command::SellShop { inventory: PlayerItemPlace::MainInventory, inventory_pos: bad_item_index }).await.unwrap();
+                            log_to_file(&format!("Sold an item on index {:?}", bad_item_index)).await;
                         }
 
                         self.session

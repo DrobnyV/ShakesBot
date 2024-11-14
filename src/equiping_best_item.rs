@@ -4,7 +4,7 @@ use sf_api::command::Command;
 use sf_api::gamestate::items::{Item};
 use sf_api::misc::EnumMapGet;
 use sf_api::SimpleSession;
-
+use std::io::Write;
 pub struct Equip<'a> {
     session: &'a mut SimpleSession,
 }
