@@ -1,3 +1,5 @@
+use std::fs::OpenOptions;
+use chrono::Local;
 use sf_api::command::Command;
 use sf_api::gamestate::items::{Item};
 use sf_api::misc::EnumMapGet;
@@ -33,7 +35,7 @@ impl<'a> Equip<'a> {
 
                             // Send the command asynchronously
                             self.session.send_command(command).await.unwrap();
-                            println!("Equipped {:?} from backpack slot {} to equipment slot {:?}", back_item.typ, back_slot_index, eq_item_option.0);
+                            log_to_file(&format!("Equipped {:?} from backpack slot {} to equipment slot {:?}", back_item.typ, back_slot_index, eq_item_option.0)).await;
                         }
                     } else if eq_item_option.1.clone().unwrap().typ == back_item.typ {
                         // Equip backpack item to equipment slot if it's better
@@ -47,7 +49,7 @@ impl<'a> Equip<'a> {
 
                             // Send the command asynchronously
                             self.session.send_command(command).await.unwrap();
-                            println!("Replaced {:?} in equipment slot {} with better {:?}", eq_item_option.0, eq_slot_index, back_item.typ);
+                            log_to_file(&format!("Replaced {:?} in equipment slot {} with better {:?}", eq_item_option.0, eq_slot_index, back_item.typ)).await;
                         }
                     }
                 }
@@ -56,10 +58,10 @@ impl<'a> Equip<'a> {
     }
 
 }
-pub fn get_attribute_value(item: Item, attr_type: sf_api::command::AttributeType) -> u32 {
+fn get_attribute_value(item: Item, attr_type: sf_api::command::AttributeType) -> u32 {
     *item.attributes.get(attr_type)
 }
-pub fn is_better_item(new_item: Item, current_item: Option<Item>) -> bool {
+fn is_better_item(new_item: Item, current_item: Option<Item>) -> bool {
     // Assign weights to each attribute for priority comparison
     let strength_weight = 5;
     let constitution_weight =4;
@@ -80,4 +82,16 @@ pub fn is_better_item(new_item: Item, current_item: Option<Item>) -> bool {
 
     // A higher new_score means the new_item is better
     new_score > current_score
+}
+async fn log_to_file(message: &str) {
+    let now = Local::now();
+    let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("help.log")
+        .expect("Unable to open or create help.log file");
+
+    writeln!(file, "[{}] {}", timestamp, message).expect("Unable to write to help.log file");
 }
