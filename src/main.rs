@@ -1,6 +1,8 @@
 mod quest;
 #[cfg(test)]
 mod testing;
+mod equiping_best_item;
+
 use std::time::Duration;
 use sf_api::{SimpleSession};
 use tokio;
@@ -8,6 +10,8 @@ use tokio::time::sleep;
 use crate::quest::Questing;
 use std::io::{self, Write};      // For reading input from the user
 use rpassword::read_password;
+use crate::equiping_best_item::Equip;
+
 #[tokio::main]
 async fn main() {
     // Prompt the user for the username
@@ -29,6 +33,8 @@ async fn main() {
     println!("Logged in successfully. Starting");
     loop {
         for session in &mut sessions {
+            let mut equip = Equip::new(session);
+            equip.equip().await;
             let mut quest = Questing::new(session);
             quest.questing().await;
             break
