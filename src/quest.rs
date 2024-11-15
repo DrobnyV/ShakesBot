@@ -35,19 +35,6 @@ impl<'a> Questing<'a> {
             let gs = self.session.send_command(Command::Update).await.unwrap();
 
 
-        async fn log_to_file(message: &str) {
-            let now = Local::now();
-            let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
-
-            let mut file = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("help.log")
-                .expect("Unable to open or create help.log file");
-
-            writeln!(file, "[{}] {}", timestamp, message).expect("Unable to write to help.log file");
-        }
-
         loop {
             sleep(Duration::from_secs(2)).await;
             let gs = self.session.game_state().unwrap();
@@ -197,4 +184,16 @@ impl<'a> Questing<'a> {
 }
 pub fn time_remaining<T: Borrow<DateTime<Local>>>(time: T) -> Duration {
     (*time.borrow() - Local::now()).to_std().unwrap_or_default()
+}
+async fn log_to_file(message: &str) {
+    let now = Local::now();
+    let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("help.log")
+        .expect("Unable to open or create help.log file");
+
+    writeln!(file, "[{}] {}", timestamp, message).expect("Unable to write to help.log file");
 }
