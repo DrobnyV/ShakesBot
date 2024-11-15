@@ -2,6 +2,7 @@ mod quest;
 #[cfg(test)]
 mod testing;
 mod equiping_best_item;
+mod dungeon;
 
 use std::time::Duration;
 use sf_api::{SimpleSession};
