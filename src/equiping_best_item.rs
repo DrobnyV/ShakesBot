@@ -14,8 +14,8 @@ impl<'a> Equip<'a> {
         Equip { session }
     }
 
-    pub async fn equip(&mut self) {
-        let mut gs = self.session.send_command(Command::Update).await.unwrap();
+    pub async fn equip(&mut self) -> Result<(), Box<dyn std::error::Error>>{
+        let mut gs = self.session.send_command(Command::Update).await?;
         let eq_items = gs.character.equipment.0.clone();  // This holds the equipment items
         let backpack = gs.character.inventory.bag.clone();  // This holds the backpack items
 
@@ -34,8 +34,8 @@ impl<'a> Equip<'a> {
                             };
 
                             // Send the command asynchronously
-                            self.session.send_command(command).await.unwrap();
-                            log_to_file(&format!("Equipped {:?} from backpack slot {} to equipment slot {:?}", back_item.typ, back_slot_index, eq_item_option.0)).await;
+                            self.session.send_command(command).await?;
+                            log_to_file(&format!("Equipped {:?} from backpack slot {} to equipment slot {:?}", back_item.typ, back_slot_index, eq_item_option.0)).await?;
                         }
                     } else if eq_item_option.1.clone().unwrap().typ == back_item.typ {
                         // Equip backpack item to equipment slot if it's better
@@ -48,13 +48,14 @@ impl<'a> Equip<'a> {
                             };
 
                             // Send the command asynchronously
-                            self.session.send_command(command).await.unwrap();
-                            log_to_file(&format!("Replaced {:?} in equipment slot {} with better {:?}", eq_item_option.0, eq_slot_index, back_item.typ)).await;
+                            self.session.send_command(command).await?;
+                            log_to_file(&format!("Replaced {:?} in equipment slot {} with better {:?}", eq_item_option.0, eq_slot_index, back_item.typ)).await?;
                         }
                     }
                 }
             }
         }
+        Ok(())
     }
 
 }
@@ -83,7 +84,7 @@ fn is_better_item(new_item: Item, current_item: Option<Item>) -> bool {
     // A higher new_score means the new_item is better
     new_score > current_score
 }
-async fn log_to_file(message: &str) {
+async fn log_to_file(message: &str) -> Result<(), Box<dyn std::error::Error>>{
     let now = Local::now();
     let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
@@ -94,4 +95,5 @@ async fn log_to_file(message: &str) {
         .expect("Unable to open or create help.log file");
 
     writeln!(file, "[{}] {}", timestamp, message).expect("Unable to write to help.log file");
+    Ok(())
 }
