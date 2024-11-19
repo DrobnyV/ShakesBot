@@ -11,6 +11,7 @@ use tokio::time::sleep;
 use crate::quest::Questing;
 use std::io::{self, Write}; // For reading input from the user
 use rpassword::read_password;
+use sf_api::command::Command;
 use crate::equiping_best_item::Equip;
 use log::{error, info, warn};
 use chrono::Local;
@@ -69,6 +70,7 @@ async fn main() {
     info!("Starting main loop...");
     loop {
         for session in &mut sessions {
+            session.send_command(Command::Update).await.expect("Failed to update");
             let mut equip = Equip::new(session);
             if let Err(e) = equip.equip().await {
                 error!("Failed to equip items: {:?}", e);
