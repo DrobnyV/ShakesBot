@@ -3,6 +3,7 @@ mod quest;
 mod testing;
 mod equiping_best_item;
 mod dungeon;
+mod functions;
 
 use std::time::Duration;
 use sf_api::SimpleSession;

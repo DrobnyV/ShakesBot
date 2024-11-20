@@ -16,6 +16,7 @@ use tokio::time::sleep;
 use std::fs::OpenOptions;
 use std::io::Write;
 use sf_api::gamestate::items::PlayerItemPlace;
+use crate::functions::time_remaining;
 
 pub struct Questing<'a> {
     session: &'a mut SimpleSession,
@@ -180,9 +181,7 @@ impl<'a> Questing<'a> {
     }
 
 }
-pub fn time_remaining<T: Borrow<DateTime<Local>>>(time: T) -> Duration {
-    (*time.borrow() - Local::now()).to_std().unwrap_or_default()
-}
+
 async fn log_to_file(message: &str) -> Result<(), Box<dyn std::error::Error>> {
     let now = Local::now();
     let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
