@@ -160,6 +160,7 @@ impl<'a> Questing<'a> {
                         log_to_file("Waiting for finishing the city guard job").await?;
                         sleep(time_remaining(busy_until)).await;
                         self.session.send_command(Command::FinishWork).await;
+                        log_to_file("Worked finished").await?;
                     } else {
                         let rem_help = remaining / 60;
                         log_to_file(&format!("{:?} minutes until the city guard is finished", rem_help)).await?;
