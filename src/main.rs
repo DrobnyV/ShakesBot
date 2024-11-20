@@ -54,21 +54,21 @@ async fn main() {
     print!("Enter your password: ");
     io::stdout().flush().unwrap(); // Ensures the password prompt is displayed
     let password = read_password().expect("Failed to read password");
-
-    // Attempt to log in with the provided credentials
-    let mut sessions = match SimpleSession::login_sf_account(username, &password).await {
-        Ok(s) => {
-            info!("Logged in successfully.");
-            s
-        }
-        Err(e) => {
-            error!("Login failed: {:?}", e);
-            return;
-        }
-    };
-
     info!("Starting main loop...");
     loop {
+        // Attempt to log in with the provided credentials
+        let mut sessions = match SimpleSession::login_sf_account(username, &password).await {
+            Ok(s) => {
+                info!("Logged in successfully.");
+                s
+            }
+            Err(e) => {
+                error!("Login failed: {:?}", e);
+                return;
+            }
+        };
+
+
         for session in &mut sessions {
             session.send_command(Command::Update).await.expect("Failed to update");
             let mut equip = Equip::new(session);
