@@ -1,11 +1,11 @@
 use std::borrow::Borrow;
 use std::time::Duration;
-use chrono::{DateTime, Local};
 use enum_map::{EnumArray, EnumMap};
 use sf_api::command::Command;
 use sf_api::gamestate::dungeons::{Dungeon, DungeonProgress};
 use sf_api::SimpleSession;
 use tokio::time::sleep;
+use crate::functions::time_remaining;
 
 pub struct Dungeons<'a> {
     session: &'a mut SimpleSession,
@@ -125,7 +125,5 @@ fn find_lowest_lvl_dungeon<T: EnumArray<DungeonProgress> + Into<Dungeon>>(
         })
 }
 
-pub fn time_remaining<T: Borrow<DateTime<Local>>>(time: T) -> Duration {
-    (*time.borrow() - Local::now()).to_std().unwrap_or_default()
-}
+
 

@@ -16,6 +16,7 @@ use tokio::time::sleep;
 use std::fs::OpenOptions;
 use std::io::Write;
 use sf_api::gamestate::items::PlayerItemPlace;
+use crate::functions::time_remaining;
 
 pub struct Questing<'a> {
     session: &'a mut SimpleSession,
@@ -28,18 +29,18 @@ impl<'a> Questing<'a> {
 
 
     // Metoda, která přijímá `hodnota` jako vstup a přičítá ji k atributu struktury
-    pub async fn questing(&mut self) {
+    pub async fn questing(&mut self) -> Result<(), Box<dyn std::error::Error>> {
 
 
         // Loop through the sessions to find the "Testing" character
-            let gs = self.session.send_command(Command::Update).await.unwrap();
+            let gs = self.session.send_command(Command::Update).await?;
 
 
         loop {
             sleep(Duration::from_secs(2)).await;
             let gs = self.session.game_state().unwrap();
             let current_time = Local::now();
-            let end_hour = 23;
+            let end_hour = 22;
             let remaining_hours = end_hour  - current_time.hour() as i32;
             let mut rem_help = remaining_hours;
             if remaining_hours > 11 || remaining_hours < 2{
@@ -49,18 +50,19 @@ impl<'a> Questing<'a> {
                 CurrentAction::Idle => match gs.tavern.available_tasks() {
                     AvailableTasks::Quests(q) => {
                         if remaining_hours > 1 {
-                            log_to_file("Starting city guard to work until 22:00").await;
+                            log_to_file("Starting city guard to work until 22:00").await?;
                             self.session
                                 .send_command(Command::StartWork { hours: rem_help as u8 - 1 })
-                                .await
-                                .unwrap();
+                                .await?;
 
                             break;
                         }
+                        let mut best_quest_index = 0;
                         let mut best_quest = gs.tavern.quests.first().unwrap().clone();
-                        for quest in gs.tavern.quests.clone() {
+                        for (index, quest) in gs.tavern.quests.clone().iter().enumerate() {
                             if quest.base_experience > best_quest.base_experience{
                                 best_quest = quest.clone();
+                                best_quest_index = index;
                             }
                         }
 
@@ -71,22 +73,21 @@ impl<'a> Questing<'a> {
                                 .has_enchantment(Enchantment::ThirstyWanderer);
 
                             if gs.character.mushrooms > 0 && gs.tavern.beer_drunk < (0 + has_extra_beer as u8) {
-                                log_to_file("Buying beer").await;
+                                log_to_file("Buying beer").await?;
                                 self.session
                                     .send_command(Command::BuyBeer)
                                     .await
                                     .unwrap();
                                 continue;
                             } else {
-                                log_to_file("Starting city guard").await;
+                                log_to_file("Starting city guard").await?;
                                 self.session
                                     .send_command(Command::StartWork { hours: rem_help as u8 - 1 })
-                                    .await
-                                    .unwrap();
+                                    .await?;
                                 break;
                             }
                         }
-                        log_to_file("Starting the next quest").await;
+                        log_to_file("Starting the next quest").await?;
 
                         if best_quest.item.is_some() && gs.character.inventory.free_slot().is_none() {
                             let backpack = gs.character.inventory.bag.clone();
@@ -100,31 +101,29 @@ impl<'a> Questing<'a> {
                                     }
                                 }
                             }
-                            self.session.send_command(Command::SellShop { inventory: PlayerItemPlace::MainInventory, inventory_pos: bad_item_index }).await.unwrap();
-                            log_to_file(&format!("Sold an item on index {:?}", bad_item_index)).await;
+                            self.session.send_command(Command::SellShop { inventory: PlayerItemPlace::MainInventory, inventory_pos: bad_item_index }).await?;
+                            log_to_file(&format!("Sold an item on index {:?}", bad_item_index)).await?;
                         }
 
-                        self.session
+                        let q = self.session
                             .send_command(Command::StartQuest {
-                                quest_pos: 0,
+                                quest_pos: best_quest_index,
                                 overwrite_inv: true,
                             })
-                            .await
-                            .unwrap();
+                            .await?;
                         continue;
                     }
                     AvailableTasks::Expeditions(_) => {
                         if !gs.tavern.can_change_questing_preference() {
-                            log_to_file("We cannot do quests because we have done expeditions today already").await;
+                            log_to_file("We cannot do quests because we have done expeditions today already").await?;
                             break;
                         }
-                        log_to_file("Changing questing setting").await;
+                        log_to_file("Changing questing setting").await?;
                         self.session
                             .send_command(Command::SetQuestsInsteadOfExpeditions {
                                 value: ExpeditionSetting::PreferQuests,
                             })
-                            .await
-                            .unwrap();
+                            .await?;
                         continue;
                     }
                 },
@@ -143,57 +142,55 @@ impl<'a> Questing<'a> {
                         }
                     }
                     if let Some(skip) = skip {
-                        log_to_file(&format!("Skipping the remaining {:?} with a {:?}", remaining, skip)).await;
+                        log_to_file(&format!("Skipping the remaining {:?} with a {:?}", remaining, skip)).await?;
                         self.session
                             .send_command(Command::FinishQuest { skip: Some(skip) })
                             .await
                             .unwrap();
                     } else {
-                        log_to_file(&format!("Waiting {:?} until the quest is finished", remaining)).await;
+                        log_to_file(&format!("Waiting {:?} until the quest is finished", remaining)).await?;
                         sleep(remaining).await;
                         self.session
                             .send_command(Command::FinishQuest { skip })
-                            .await
-                            .unwrap();
+                            .await?;
                     }
                 }
                 CurrentAction::CityGuard { hours, busy_until } => {
                     let remaining = time_remaining(busy_until);
                     if remaining_hours <= 1 || remaining == Duration::ZERO{
-                        log_to_file("Waiting for finishing the city guard job").await;
+                        log_to_file("Waiting for finishing the city guard job").await?;
                         sleep(time_remaining(busy_until)).await;
                         self.session.send_command(Command::FinishWork).await;
+                        log_to_file("Worked finished").await?;
                     } else {
                         let rem_help = remaining / 60;
-                        log_to_file(&format!("{:?} minutes until the city guard is finished", rem_help)).await;
+                        log_to_file(&format!("{:?} minutes until the city guard is finished", rem_help)).await?;
                         break;
                     }
                     continue;
                 }
                 _ => {
-                    log_to_file("Expeditions are not part of this example").await;
+                    log_to_file("Expeditions are not part of this example").await?;
                     break;
                 }
             }
         }
 
 
-
+        Ok(())
     }
 
 }
-pub fn time_remaining<T: Borrow<DateTime<Local>>>(time: T) -> Duration {
-    (*time.borrow() - Local::now()).to_std().unwrap_or_default()
-}
-async fn log_to_file(message: &str) {
+
+async fn log_to_file(message: &str) -> Result<(), Box<dyn std::error::Error>> {
     let now = Local::now();
     let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
-        .open("help.log")
-        .expect("Unable to open or create help.log file");
+        .open("help.log")?;
 
-    writeln!(file, "[{}] {}", timestamp, message).expect("Unable to write to help.log file");
+    writeln!(file, "[{}] {}", timestamp, message)?;
+    Ok(())
 }

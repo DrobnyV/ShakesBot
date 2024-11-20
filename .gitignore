@@ -4,3 +4,4 @@
 /src/testing.rs
 /Cargo.lock
 /.env
+/application.log
