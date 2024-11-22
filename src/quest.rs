@@ -28,17 +28,15 @@ impl<'a> Questing<'a> {
     }
 
 
-    // Metoda, která přijímá `hodnota` jako vstup a přičítá ji k atributu struktury
+
     pub async fn questing(&mut self) -> Result<(), Box<dyn std::error::Error>> {
 
 
-        // Loop through the sessions to find the "Testing" character
-            let gs = self.session.send_command(Command::Update).await?;
 
 
         loop {
             sleep(Duration::from_secs(2)).await;
-            let gs = self.session.game_state().unwrap();
+            let gs = self.session.send_command(Command::Update).await.unwrap();
             let current_time = Local::now();
             let end_hour = 22;
             let remaining_hours = end_hour  - current_time.hour() as i32;
