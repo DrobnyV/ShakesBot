@@ -16,7 +16,7 @@ use tokio::time::sleep;
 use std::fs::OpenOptions;
 use std::io::Write;
 use sf_api::gamestate::items::PlayerItemPlace;
-use crate::functions::time_remaining;
+use crate::functions::{log_to_file, sell_the_worst_item, time_remaining};
 
 pub struct Questing<'a> {
     session: &'a mut SimpleSession,
@@ -88,19 +88,7 @@ impl<'a> Questing<'a> {
                         log_to_file("Starting the next quest").await?;
 
                         if best_quest.item.is_some() && gs.character.inventory.free_slot().is_none() {
-                            let backpack = gs.character.inventory.bag.clone();
-                            let mut bad_item_index = 0;
-                            let mut bad_valu = 999999999;
-                            for (back_slot_index, back_item_option) in backpack.iter().enumerate() {
-                                if !back_item_option.is_none(){
-                                    if bad_valu > back_item_option.clone().unwrap().price{
-                                        bad_item_index = back_slot_index;
-                                        bad_valu = back_item_option.clone().unwrap().price;
-                                    }
-                                }
-                            }
-                            self.session.send_command(Command::SellShop { inventory: PlayerItemPlace::MainInventory, inventory_pos: bad_item_index }).await?;
-                            log_to_file(&format!("Sold an item on index {:?}", bad_item_index)).await?;
+                            sell_the_worst_item(self.session,gs);
                         }
 
                         let q = self.session
@@ -180,15 +168,3 @@ impl<'a> Questing<'a> {
 
 }
 
-async fn log_to_file(message: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let now = Local::now();
-    let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
-
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("help.log")?;
-
-    writeln!(file, "[{}] {}", timestamp, message)?;
-    Ok(())
-}
