@@ -16,11 +16,11 @@ impl<'a> Dungeons<'a> {
         Dungeons { session }
     }
     pub async fn do_dungeons(&mut self) {
-        self.session.send_command(Command::Update).await.unwrap();
+
 
         loop {
             sleep(Duration::from_secs(2)).await;
-            let gs = self.session.game_state().unwrap();
+            let gs = self.session.send_command(Command::Update).await.unwrap();
 
             // We might have dungeon keys still waiting to be unlocked, so we
             // should use everything we have
