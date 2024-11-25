@@ -5,7 +5,7 @@ use sf_api::command::Command;
 use sf_api::gamestate::dungeons::{Dungeon, DungeonProgress};
 use sf_api::SimpleSession;
 use tokio::time::sleep;
-use crate::functions::{sell_the_worst_item, time_remaining};
+use crate::functions::{log_to_file, sell_the_worst_item, time_remaining};
 
 pub struct Dungeons<'a> {
     session: &'a mut SimpleSession,
@@ -15,7 +15,7 @@ impl<'a> Dungeons<'a> {
     pub fn new(session: &'a mut SimpleSession) -> Self {
         Dungeons { session }
     }
-    pub async fn do_dungeons(&mut self) {
+    pub async fn do_dungeons(&mut self)-> Result<(), Box<dyn std::error::Error>>  {
 
 
         loop {
@@ -36,7 +36,7 @@ impl<'a> Dungeons<'a> {
                 // TODO: I do not have a char, that has finished the portal, so you
                 // should maybe check the finished count against the current
                 if portal.can_fight {
-                    println!("Fighting the player portal");
+                    log_to_file("Fighting the player portal").await?;
                     self.session.send_command(Command::FightPortal).await.unwrap();
                     continue;
                 }
@@ -64,15 +64,16 @@ impl<'a> Dungeons<'a> {
                     (Some(x), _) => x,
                     (_, Some(x)) => x,
                     (None, None) => {
-                        println!("There are no dungeons to fight in!");
+                        log_to_file("There are no dungeons to fight in!").await?;
                         break;
                     }
                 };
 
-            println!("Chose: {target_dungeon:?} as the best dungeon to fight in");
+
+            log_to_file("Chose: {target_dungeon:?} as the best dungeon to fight in").await?;
 
             let Some(next_fight) = gs.dungeons.next_free_fight else {
-                println!("We do not have a time for the next fight");
+                log_to_file("We do not have a time for the next fight").await?;
                 break;
             };
             let rem = time_remaining(next_fight);
@@ -82,7 +83,7 @@ impl<'a> Dungeons<'a> {
                 && target_level <= gs.character.level + 20
             {
                 // You should add some better logic on when to skip this
-                println!("Using mushrooms to fight in the dungeon");
+                log_to_file("Using mushrooms to fight in the dungeon").await?;
                 self.session
                     .send_command(Command::FightDungeon {
                         dungeon: target_dungeon,
@@ -91,17 +92,10 @@ impl<'a> Dungeons<'a> {
                     .await
                     .unwrap();
             } else {
-                println!("Waiting {rem:?} until we can fight in a dungeon");
-                sleep(rem).await;
-                self.session
-                    .send_command(Command::FightDungeon {
-                        dungeon: target_dungeon,
-                        use_mushroom: false,
-                    })
-                    .await
-                    .unwrap();
+                break;
             }
         }
+        Ok(())
     }
 
 }

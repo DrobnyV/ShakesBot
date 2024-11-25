@@ -17,6 +17,7 @@ use crate::equiping_best_item::Equip;
 use log::{error, info, warn};
 use chrono::Local;
 use fern::Dispatch;
+use crate::dungeon::Dungeons;
 
 fn setup_logger() -> Result<(), fern::InitError> {
     Dispatch::new()
@@ -80,6 +81,11 @@ async fn main() {
             let mut quest = Questing::new(session);
             if let Err(e) = quest.questing().await {
                 error!("Questing failed: {:?}", e);
+            }
+
+            let mut dungeon = Dungeons::new(session);
+            if let Err(e) = dungeon.do_dungeons().await {
+                error!("Dungeon failed: {:?}", e);
             }
 
             // Break after processing one session for simplicity
