@@ -88,7 +88,7 @@ impl<'a> Questing<'a> {
                         log_to_file("Starting the next quest").await?;
 
                         if best_quest.item.is_some() && gs.character.inventory.free_slot().is_none() {
-                            sell_the_worst_item(self.session,gs);
+                            sell_the_worst_item(self.session).await?;
                         }
 
                         let q = self.session

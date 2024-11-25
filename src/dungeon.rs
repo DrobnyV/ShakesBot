@@ -5,7 +5,7 @@ use sf_api::command::Command;
 use sf_api::gamestate::dungeons::{Dungeon, DungeonProgress};
 use sf_api::SimpleSession;
 use tokio::time::sleep;
-use crate::functions::time_remaining;
+use crate::functions::{sell_the_worst_item, time_remaining};
 
 pub struct Dungeons<'a> {
     session: &'a mut SimpleSession,
@@ -43,10 +43,7 @@ impl<'a> Dungeons<'a> {
             }
 
             if gs.character.inventory.free_slot().is_none() {
-                println!(
-                    "Inventory is full. We can not fight in a dungeon like this"
-                );
-                // You should make a free slot at this point
+                sell_the_worst_item(self.session).await.expect("Error while selling item");
                 break;
             }
 
