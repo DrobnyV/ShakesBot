@@ -143,7 +143,7 @@ impl<'a> Questing<'a> {
                 }
                 CurrentAction::CityGuard { hours, busy_until } => {
                     let remaining = time_remaining(busy_until);
-                    if remaining_hours <= 1 || remaining == Duration::ZERO{
+                    if (remaining_hours <= 1 && remaining_hours > 0) || remaining == Duration::ZERO{
                         log_to_file("Waiting for finishing the city guard job").await?;
                         sleep(time_remaining(busy_until)).await;
                         self.session.send_command(Command::FinishWork).await;
