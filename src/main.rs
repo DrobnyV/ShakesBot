@@ -4,6 +4,7 @@ mod testing;
 mod equiping_best_item;
 mod dungeon;
 mod functions;
+mod arena;
 
 use std::time::Duration;
 use sf_api::SimpleSession;
