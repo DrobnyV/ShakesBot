@@ -88,7 +88,7 @@ impl<'a> Questing<'a> {
                         log_to_file("Starting the next quest").await?;
 
                         if best_quest.item.is_some() && gs.character.inventory.free_slot().is_none() {
-                            sell_the_worst_item(self.session);
+                            sell_the_worst_item(self.session).await?;
                         }
 
                         let q = self.session
@@ -143,7 +143,7 @@ impl<'a> Questing<'a> {
                 }
                 CurrentAction::CityGuard { hours, busy_until } => {
                     let remaining = time_remaining(busy_until);
-                    if remaining_hours <= 1 || remaining == Duration::ZERO{
+                    if (remaining_hours <= 1 && remaining_hours > 0) || remaining == Duration::ZERO{
                         log_to_file("Waiting for finishing the city guard job").await?;
                         sleep(time_remaining(busy_until)).await;
                         self.session.send_command(Command::FinishWork).await;

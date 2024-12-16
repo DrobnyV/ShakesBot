@@ -4,6 +4,7 @@ mod testing;
 mod equiping_best_item;
 mod dungeon;
 mod functions;
+mod arena;
 
 use std::time::Duration;
 use sf_api::SimpleSession;
@@ -17,6 +18,7 @@ use crate::equiping_best_item::Equip;
 use log::{error, info, warn};
 use chrono::Local;
 use fern::Dispatch;
+use crate::dungeon::Dungeons;
 
 fn setup_logger() -> Result<(), fern::InitError> {
     Dispatch::new()
@@ -55,23 +57,26 @@ async fn main() {
     print!("Enter your password: ");
     io::stdout().flush().unwrap(); // Ensures the password prompt is displayed
     let password = read_password().expect("Failed to read password");
+    // Attempt to log in with the provided credentials
+    let mut sessions = match SimpleSession::login_sf_account(username, &password).await {
+        Ok(s) => {
+            info!("Logged in successfully.");
+            s
+        }
+        Err(e) => {
+            error!("Login failed: {:?}", e);
+            return;
+        }
+    };
     info!("Starting main loop...");
     loop {
-        // Attempt to log in with the provided credentials
-        let mut sessions = match SimpleSession::login_sf_account(username, &password).await {
-            Ok(s) => {
-                info!("Logged in successfully.");
-                s
-            }
-            Err(e) => {
-                error!("Login failed: {:?}", e);
-                return;
-            }
-        };
 
 
         for session in &mut sessions {
             session.send_command(Command::Update).await.expect("Failed to update");
+
+            session.send_command(Command::CollectCalendar).await.expect("Failed to collectCalendar");
+
             let mut equip = Equip::new(session);
             if let Err(e) = equip.equip().await {
                 error!("Failed to equip items: {:?}", e);
@@ -80,6 +85,11 @@ async fn main() {
             let mut quest = Questing::new(session);
             if let Err(e) = quest.questing().await {
                 error!("Questing failed: {:?}", e);
+            }
+
+            let mut dungeon = Dungeons::new(session);
+            if let Err(e) = dungeon.do_dungeons().await {
+                error!("Dungeon failed: {:?}", e);
             }
 
             // Break after processing one session for simplicity
