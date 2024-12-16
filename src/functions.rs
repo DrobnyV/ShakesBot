@@ -3,9 +3,9 @@ use std::fs::OpenOptions;
 use std::time::Duration;
 use chrono::{DateTime, Local};
 use sf_api::command::Command;
-use sf_api::gamestate::GameState;
 use sf_api::gamestate::items::PlayerItemPlace;
 use sf_api::SimpleSession;
+use std::io::Write;
 
 pub async fn log_to_file(message: &str) -> Result<(), Box<dyn std::error::Error>> {
     let now = Local::now();
@@ -22,7 +22,8 @@ pub async fn log_to_file(message: &str) -> Result<(), Box<dyn std::error::Error>
 pub fn time_remaining<T: Borrow<DateTime<Local>>>(time: T) -> Duration {
     (*time.borrow() - Local::now()).to_std().unwrap_or_default()
 }
-pub async fn sell_the_worst_item(mut session: &mut SimpleSession ,gs: &mut GameState) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn sell_the_worst_item(mut session: &mut SimpleSession) -> Result<(), Box<dyn std::error::Error>> {
+    let gs = session.send_command(Command::Update).await?;
     let backpack = gs.character.inventory.bag.clone();
     let mut bad_item_index = 0;
     let mut bad_valu = 999999999;
