@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sf-api = { git = "https://github.com/the-marenga/sf-api", rev = "79607d2" }
+sf-api = { git = "https://github.com/the-marenga/sf-api", rev = "b11a1f3" }
 tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros"] }
 chrono = "0.4"          # Version 0.4 is stable, but you can check for the latest version
 enum-map = "2.7.3"

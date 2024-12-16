@@ -74,6 +74,9 @@ async fn main() {
 
         for session in &mut sessions {
             session.send_command(Command::Update).await.expect("Failed to update");
+
+            session.send_command(Command::CollectCalendar).await.expect("Failed to collectCalendar");
+
             let mut equip = Equip::new(session);
             if let Err(e) = equip.equip().await {
                 error!("Failed to equip items: {:?}", e);
