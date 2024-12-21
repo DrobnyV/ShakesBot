@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 use std::time::Duration;
 
 use sf_api::command::Command;
+use sf_api::command::Command::FightDungeon;
 use sf_api::gamestate::dungeons::{Dungeon, LightDungeon};
 use sf_api::SimpleSession;
 use sf_api::simulate::Monster;
@@ -62,19 +63,20 @@ impl<'a> Dungeons<'a> {
                 }
             }
 
-            let Some((target_dungeon, target_monster)) = best else {
+            let Some((target_dungeon, target_monster)) = best
+            else {
                 println!("There are no more enemies left to fight");
                 break;
             };
 
-
-            log_to_file("Chose: {target_dungeon:?} as the best dungeon to fight in").await?;
-
-            let Some(next_fight) = gs.dungeons.next_free_fight else {
+            let Some(next_fight) = gs.dungeons.next_free_fight.clone() else {
                 log_to_file("We do not have a time for the next fight").await?;
                 break;
             };
+
             let rem = time_remaining(next_fight);
+
+
 
             if rem > Duration::from_secs(60 * 5)
                 && gs.character.mushrooms > 1000
@@ -89,7 +91,12 @@ impl<'a> Dungeons<'a> {
                     })
                     .await
                     .unwrap();
-            } else {
+            }
+            if rem < Duration::from_secs(1) {
+                self.session.send_command(FightDungeon { dungeon: target_dungeon, use_mushroom: false }).await?;
+                log_to_file(&format!("Chose: {:?} as the best dungeon to fight in", target_dungeon)).await?;
+            }else{
+                log_to_file(&format!("{:?} minutes until the next dungeon fight is available", rem/60)).await?;
                 break;
             }
         }
