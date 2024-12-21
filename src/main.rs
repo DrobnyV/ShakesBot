@@ -21,22 +21,24 @@ use fern::Dispatch;
 use crate::dungeon::Dungeons;
 
 fn setup_logger() -> Result<(), fern::InitError> {
+    // Create a dispatch for logging
     Dispatch::new()
-        // Write to log file
+        // Log to a file named `application.log`
         .chain(fern::log_file("application.log")?)
-        // Optionally write to console as well
+        // Also log to the console (stdout)
         .chain(io::stdout())
-        // Use a custom log format
+        // Use a custom log format for both outputs
         .format(|out, message, record| {
             out.finish(format_args!(
                 "{} [{}] {}",
-                Local::now().format("%Y-%m-%d %H:%M:%S"),
-                record.level(),
-                message
+                Local::now().format("%Y-%m-%d %H:%M:%S"), // Timestamp
+                record.level(),                           // Log level
+                message                                   // Log message
             ))
         })
-        // Set log level (e.g., Info and above)
+        // Set the default log level (Info and above)
         .level(log::LevelFilter::Info)
+        // Apply the logger
         .apply()?;
     Ok(())
 }

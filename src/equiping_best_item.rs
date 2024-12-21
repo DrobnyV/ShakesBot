@@ -1,10 +1,11 @@
-use std::fs::OpenOptions;
-use chrono::Local;
+
+
 use sf_api::command::Command;
 use sf_api::gamestate::items::{Item};
 use sf_api::misc::EnumMapGet;
 use sf_api::SimpleSession;
-use std::io::Write;
+use crate::functions::log_to_file;
+
 pub struct Equip<'a> {
     session: &'a mut SimpleSession,
 }
@@ -83,17 +84,4 @@ fn is_better_item(new_item: Item, current_item: Option<Item>) -> bool {
 
     // A higher new_score means the new_item is better
     new_score > current_score
-}
-async fn log_to_file(message: &str) -> Result<(), Box<dyn std::error::Error>>{
-    let now = Local::now();
-    let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
-
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("help.log")
-        .expect("Unable to open or create help.log file");
-
-    writeln!(file, "[{}] {}", timestamp, message).expect("Unable to write to help.log file");
-    Ok(())
 }

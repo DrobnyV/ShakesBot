@@ -11,12 +11,18 @@ pub async fn log_to_file(message: &str) -> Result<(), Box<dyn std::error::Error>
     let now = Local::now();
     let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
+    // Open or create the file in append mode
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
         .open("help.log")?;
 
+    // Write to the file
     writeln!(file, "[{}] {}", timestamp, message)?;
+
+    // Also print to the console
+    println!("[{}] {}", timestamp, message);
+
     Ok(())
 }
 pub fn time_remaining<T: Borrow<DateTime<Local>>>(time: T) -> Duration {
