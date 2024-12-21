@@ -18,6 +18,7 @@ use crate::equiping_best_item::Equip;
 use log::{error, info, warn};
 use chrono::Local;
 use fern::Dispatch;
+use crate::arena::Arena;
 use crate::dungeon::Dungeons;
 
 fn setup_logger() -> Result<(), fern::InitError> {
@@ -91,6 +92,11 @@ async fn main() {
 
             let mut dungeon = Dungeons::new(session);
             if let Err(e) = dungeon.do_dungeons().await {
+                error!("Dungeon failed: {:?}", e);
+            }
+
+            let mut arena = Arena::new(session);
+            if let Err(e) = arena.fight_arena().await {
                 error!("Dungeon failed: {:?}", e);
             }
 
