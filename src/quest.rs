@@ -48,42 +48,36 @@ impl<'a> Questing<'a> {
                         }
 
                         if best_quest.base_length > gs.tavern.thirst_for_adventure_sec {
-                            let has_extra_beer = gs
-                                .character
-                                .equipment
-                                .has_enchantment(Enchantment::ThirstyWanderer);
-                            let events= gs.specials.events.active.clone();
-                            for mut event in events{
+                            let has_extra_beer = gs.character.equipment.has_enchantment(Enchantment::ThirstyWanderer);
+                            let events = gs.specials.events.active.clone();
+
+                            // Since we're going to use self.session mutably, we need to limit the scope of gs
+                            drop(gs); // Explicitly drop gs since we're done with it
+
+                            for event in events {
                                 if event == ExceptionalXPEvent || event == EpicQuestExtravaganza || event == OneBeerTwoBeerFreeBeer {
+                                    let gs = self.session.send_command(Command::Update).await.unwrap(); // Re-fetch gs
                                     if gs.character.mushrooms > 0 && gs.tavern.beer_drunk < (10 + has_extra_beer as u8) {
                                         log_to_file("Buying beer").await?;
-                                        self.session
-                                            .send_command(Command::BuyBeer)
-                                            .await
-                                            .unwrap();
+                                        self.session.send_command(Command::BuyBeer).await.unwrap();
                                         continue;
                                     } else {
                                         log_to_file("Starting city guard").await?;
-                                        self.session
-                                            .send_command(Command::StartWork { hours: 10 })
-                                            .await?;
+                                        self.session.send_command(Command::StartWork { hours: 10 }).await?;
                                         break;
                                     }
                                 }
                             }
 
+                            // Need to re-fetch gs since we dropped it earlier
+                            let gs = self.session.send_command(Command::Update).await.unwrap();
                             if gs.character.mushrooms > 0 && gs.tavern.beer_drunk < (0 + has_extra_beer as u8) {
                                 log_to_file("Buying beer").await?;
-                                self.session
-                                    .send_command(Command::BuyBeer)
-                                    .await
-                                    .unwrap();
+                                self.session.send_command(Command::BuyBeer).await.unwrap();
                                 continue;
                             } else {
                                 log_to_file("Starting city guard").await?;
-                                self.session
-                                    .send_command(Command::StartWork { hours: 10 })
-                                    .await?;
+                                self.session.send_command(Command::StartWork { hours: 10 }).await?;
                                 break;
                             }
                         }
