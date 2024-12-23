@@ -52,7 +52,7 @@ impl<'a> Questing<'a> {
                             let events = gs.specials.events.active.clone();
 
                             // Since we're going to use self.session mutably, we need to limit the scope of gs
-                            drop(gs); // Explicitly drop gs since we're done with it
+                            let _ = gs; // Explicitly drop gs since we're done with it
 
                             for event in events {
                                 if event == ExceptionalXPEvent || event == EpicQuestExtravaganza || event == OneBeerTwoBeerFreeBeer {
