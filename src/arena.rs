@@ -27,8 +27,8 @@ impl<'a> Arena<'a> {
         for enemy in a {
             if let Ok(_) = self.session.send_command(Command::ViewPlayer { ident: enemy.to_string() }).await {
                 if let Some(player) = self.session.game_state().unwrap().lookup.lookup_pid(enemy) {
-                    let enemy_attributes = player.base_attributes.values().sum::<u32>() + player.bonus_attributes.values().sum::<u32>();
-
+                    let enemy_attributes = player.base_attributes.values().sum::<u32>() + player.bonus_attributes.values().sum::<u32>()
+                        + ((player.min_damage_base + player.max_damage_base)/2);
                     if is_first_enemy || enemy_attributes < lowest_enemy_attributes {
                         lowest_enemy_attributes = enemy_attributes;
                         lowest_enemy_name = Some(player.name.clone());
