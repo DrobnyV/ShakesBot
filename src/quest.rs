@@ -51,15 +51,15 @@ impl<'a> Questing<'a> {
                             let has_extra_beer = gs.character.equipment.has_enchantment(Enchantment::ThirstyWanderer);
                             let events = gs.specials.events.active.clone();
 
-                            // Since we're going to use self.session mutably, we need to limit the scope of gs
-                            let _ = gs; // Explicitly drop gs since we're done with it
-
+                            drop(gs);
+                            let mut a = false;
                             for event in events {
                                 if event == ExceptionalXPEvent || event == EpicQuestExtravaganza || event == OneBeerTwoBeerFreeBeer {
-                                    let gs = self.session.send_command(Command::Update).await.unwrap(); // Re-fetch gs
+                                    let gs = self.session.send_command(Command::Update).await?;
                                     if gs.character.mushrooms > 0 && gs.tavern.beer_drunk < (10 + has_extra_beer as u8) {
                                         log_to_file("Buying beer").await?;
-                                        self.session.send_command(Command::BuyBeer).await.unwrap();
+                                        self.session.send_command(Command::BuyBeer).await?;
+                                        a = true;
                                         continue;
                                     } else {
                                         log_to_file("Starting city guard").await?;
@@ -68,19 +68,24 @@ impl<'a> Questing<'a> {
                                     }
                                 }
                             }
-
-                            // Need to re-fetch gs since we dropped it earlier
-                            let gs = self.session.send_command(Command::Update).await.unwrap();
-                            if gs.character.mushrooms > 0 && gs.tavern.beer_drunk < (0 + has_extra_beer as u8) {
-                                log_to_file("Buying beer").await?;
-                                self.session.send_command(Command::BuyBeer).await.unwrap();
-                                continue;
+                            if !a {
+                                let gs = self.session.send_command(Command::Update).await?;
+                                if gs.character.mushrooms > 0 && gs.tavern.beer_drunk < (0 + has_extra_beer as u8) {
+                                    log_to_file("Buying beer").await?;
+                                    self.session.send_command(Command::BuyBeer).await?;
+                                    continue;
+                                } else {
+                                    log_to_file("Starting city guard").await?;
+                                    self.session.send_command(Command::StartWork { hours: 10 }).await?;
+                                    break;
+                                }
                             } else {
-                                log_to_file("Starting city guard").await?;
-                                self.session.send_command(Command::StartWork { hours: 10 }).await?;
-                                break;
+                                a = false;
                             }
                         }
+
+                        // Fetch gs again for the new context
+                        let gs = self.session.send_command(Command::Update).await?;
                         log_to_file("Starting the next quest").await?;
 
                         if best_quest.item.is_some() && gs.character.inventory.free_slot().is_none() {
@@ -119,7 +124,7 @@ impl<'a> Questing<'a> {
                     if remaining > Duration::from_secs(60) {
                         if gs.tavern.quicksand_glasses > 0 {
                             skip = Some(TimeSkip::Glass);
-                        } else if gs.character.mushrooms > 0 && gs.tavern.mushroom_skip_allowed {
+                        } else if gs.character.mushrooms > 100 && gs.tavern.mushroom_skip_allowed {
                             skip = Some(TimeSkip::Mushroom);
                         }
                     }

@@ -5,6 +5,7 @@ mod equiping_best_item;
 mod dungeon;
 mod functions;
 mod arena;
+mod Expedision;
 
 use std::time::Duration;
 use sf_api::SimpleSession;
@@ -18,8 +19,11 @@ use crate::equiping_best_item::Equip;
 use log::{error, info, warn};
 use chrono::Local;
 use fern::Dispatch;
+use sf_api::gamestate::tavern::CurrentAction::Expedition;
 use crate::arena::Arena;
 use crate::dungeon::Dungeons;
+use crate::Expedision::Exping;
+use crate::functions::{log_to_file, sell_the_worst_item};
 
 fn setup_logger() -> Result<(), fern::InitError> {
     // Create a dispatch for logging
@@ -77,19 +81,31 @@ async fn main() {
 
         for session in &mut sessions {
             session.send_command(Command::Update).await.expect("Failed to update");
+            log_to_file(&*session.game_state_mut().unwrap().character.name.clone()).await.expect("Failed to log to file");
+            log_to_file("{").await.expect("Failed to log to file");
 
+            if  session.game_state().unwrap().character.inventory.free_slot().is_none(){
+                sell_the_worst_item(session).await.expect("Cannot sell item");
+            }
+            for item in session.game_state().unwrap().character.inventory.bag.clone(){
+
+            }
 
 
             let mut equip = Equip::new(session);
             if let Err(e) = equip.equip().await {
                 error!("Failed to equip items: {:?}", e);
             }
-
+            /*
             let mut quest = Questing::new(session);
             if let Err(e) = quest.questing().await {
                 error!("Questing failed: {:?}", e);
             }
-
+            */
+            let mut exp =Exping::new(session);
+            if let Err(e) = exp.Exping().await {
+                error!("Failed to start expedition: {:?}", e);
+            }
             let mut dungeon = Dungeons::new(session);
             if let Err(e) = dungeon.do_dungeons().await {
                 error!("Dungeon failed: {:?}", e);
@@ -100,9 +116,10 @@ async fn main() {
                 error!("Dungeon failed: {:?}", e);
             }
 
-            // Break after processing one session for simplicity
+            log_to_file("}").await.expect("Failed to log to file");
             break;
         }
         sleep(Duration::from_secs(60)).await;
+
     }
 }

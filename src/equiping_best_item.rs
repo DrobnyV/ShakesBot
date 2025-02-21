@@ -86,11 +86,11 @@ fn get_attribute_value(item: Item, attr_type: sf_api::command::AttributeType) ->
 }
 
 async fn is_better_item(new_item: Item, current_item: Option<Item>) -> bool {
-    let strength_weight = 1;
+    let strength_weight = 5;
     let constitution_weight = 4;
     let luck_weight = 2;
     let intelligence_weight = 1;
-    let dexterity_weight = 5;
+    let dexterity_weight = 1;
     let armor_weapon_weight = 6;
 
     // Calculate scores based on weighted attribute values
